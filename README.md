@@ -1,2 +1,2 @@
-# Algorithm
-C++ program from algorithm class
+# AVL tree Algorithm
+C++ Implementation of AVL Trees
