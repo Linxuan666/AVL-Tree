@@ -1,210 +1,265 @@
-/*
-1.Task Description
-    You are asked to use C++ to implement:
-    1) School Method for Integer Addition and Karatsuba Algorithm for Integer Multiplication
-    2) Integer Division 
-2 Submission Guideline
-    Your program takes one line as input. The input line contains three integers separated by spaces. 
-    Let the three integers be I1, I2, and B. I1 and I2 are both nonnegative integers up to 100 digits long 
-    (there are no leading 0s, except when the value itself is 0). B is I1 and I2's base (B is from 2 to 10).
-    Your program should output the sum of I1 and I2, using the school method, then the product of I1 and I2, 
-    using the Karatsuba algorithm, and finally the ratio between I1 and I2 (rounded down). 
-    You are asked to come up with a way to perform this division. I2 will not be 0.
-    The results should still use base B. Please separate the results using one space.
+/*  1.Task Description: 
+		You are asked to use C++ to implement:
+		1) Binary Tree Traversal
+		2) AVL Tree Insertion and Deletion
+	2.Submission Guideline:
+		You should start your program by initializing an empty AVL tree. 
+		Your program takes one line as input. 
+		The input line contains n "modification moves" separated by spaces (1 <= n <= 100). 
+		The available modification moves are:
+			1) Aint (Character A followed by an int value between 1 and 100): A3 means insert value 3 into the AVLtree. 
+			   If 3 is already in the tree, do nothing.
+			2) Dint (Character D followed by an int value between 1 and 100): D3 means delete value 3 into the AVL tree. 
+			   If 3 is not in the tree, do nothing.
+		Your input is then followed by exactly one nishing move (PRE or POST or IN): 
+			1) If the finishing move is PRE, then you should print out the tree (in its current situation) in pre-order. 
+			2) If the tree is empty, print out EMPTY. 
+			3) Otherwise, print out the values separated by spaces. POST and IN are handled similarly.
+		You don't need to worry about invalid inputs.
 
-    Sample input 1: 101 5 10
-    Sample output 1: 106 505 20
-    Sample input 2: 10 111 2
-    Sample output 2: 1001 1110 0
-    Sample input 3: 111 10 2
-    Sample output 2: 1001 1110 11
+		Sample input 1: A1 A2 A3 IN
+		Sample output 1: 1 2 3
+		Sample input 2: A1 A2 A3 PRE
+		Sample output 2: 2 1 3
+		Sample input 3: A1 D1 POST
+		Sample output 3: EMPTY
 */
 
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <sstream>
+
 using namespace std;
 
-// School Method for integer addition
-string add(string I1, string I2, int B) {
-    int len = max(I1.size(), I2.size());
-    int c = 0;
-    int s;
-    string sum;
-    for (int i = 0; i < len || c; i++) {
-        if (i < I1.size()) c += I1[I1.size() - i - 1] - '0';
-        if (i < I2.size()) c += I2[I2.size() - i - 1] - '0';
-        s = c % B;
-        c = c / B;
-        sum.push_back(s + '0');
-    }
-    reverse(sum.begin(), sum.end());
-    return sum;
+//define Node class
+class Node {
+	public:
+		int key;
+		Node* left;
+		Node* right;
+		Node(int k):key(k),left(nullptr),right(nullptr) {}
+};
+
+//define AVLTree class
+class AVLTree {
+	private:
+		Node* LL_Rotation(Node* root);
+		Node* RR_Rotation(Node* root);
+		Node* RL_Rotation(Node* root);
+		Node* LR_Rotation(Node* root);
+		int getheight(Node* root);
+		int diff(Node* root);
+		Node* balance(Node* root);
+		Node* findMax(Node* root);
+
+	public:
+		Node* avlroot;
+		AVLTree() { avlroot = nullptr; } 
+		Node* insertNode(Node* root, int k);
+		Node* deleteNode(Node* root, int k);
+		bool isEmptyTree(Node* root);
+		void preOrder(Node* root);
+		void inOrder(Node* root);
+		void postOrder(Node* root);
+};
+
+//Left Rotation
+Node* AVLTree::LL_Rotation(Node* root) {
+	Node* temp = root->left;
+	root->left = temp->right;
+	temp->right = root;
+	return temp;
 }
 
-// subtract two numbers
-string subtract(string I1, string I2, int B) {
-    int len = max(I1.size(), I2.size());
-    int c = 0;
-    int s;
-    string sub;
-    for (int i = 0; i < len; i++) {
-        if (i < I1.size()) c += I1[I1.size() - i - 1] - '0';
-        if (i < I2.size()) c -= I2[I2.size() - i - 1] - '0';
-        if (i == len - 1 && c < 0) return "-"+subtract(I2, I1, B);
-        if (c >= 0) {
-            s = c;
-            c = 0;
-
-        }
-        else {
-            s = B + c;
-            c = -1;
-        }
-        sub.push_back(s + '0');
-    }
-    reverse(sub.begin(), sub.end()); 
-    while (sub[0] == '0' && sub.size() > 1) sub.erase(0,1);
-    return sub;
+//Right Rotation
+Node* AVLTree::RR_Rotation(Node* root) {
+	Node* temp = root->right;
+	root->right = temp->left;
+	temp->left = root;
+	return temp;
 }
 
-// School Method for integer multiplication
-string school_mul(string I1, string I2, int B) {
-    int m = I1.size();
-    int len2 = I2.size();
-    string sch_mul = "0";
-    for (int j = 0; j < len2; j++) {
-        int c = 0;
-        int a_b, d;
-        std::string sum;
-        for (int i = 0; i < m; i++) {
-            a_b = (I1[m - i - 1] - '0') * (I2[len2 - j - 1] - '0');
-            d = (a_b + c) % B;
-            c = (a_b + c) / B;
-            sum = std::to_string(d) + sum;
-            if (i == m - 1) {
-                sum = std::to_string(c) + sum;
-                sum.append(j, '0');
-            }
-        }
-        sch_mul = add(sch_mul, sum, B);
-    }
-    while (sch_mul[0] == '0' && sch_mul.size() > 1) sch_mul.erase(0, 1);
-    return sch_mul;
+//Right-Left Rotation
+Node* AVLTree::RL_Rotation(Node* root) {
+	root->right = LL_Rotation(root->right);
+	return RR_Rotation(root);
 }
 
-// Karatsuba Algorithm for integer multiplication 
-string multiply(string I1, string I2, int B) {
-    if (I1 == "0" || I2 == "0") return "0";
-    int len1 = I1.size();
-    int len2 = I2.size();
-    if (len1 < len2) return multiply(I2, I1, B);
-    int m = len1;
-    if (m < 4) return school_mul(I1, I2, B); 
-    int k = m / 2;
-    string a1, a0, b1, b0;
-    if (len1-k >= len2) {
-        a1 = I1.substr(0, k);
-        a0 = I1.substr(k);
-        b1 = "0";
-        b0 = I2;
-    }
-    else {
-        a1 = I1.substr(0, k);
-        a0 = I1.substr(k);
-        b1 = I2.substr(0, len2 - len1 + k);
-        b0 = I2.substr(len2 - len1 + k);
-    }
-    string p2 = multiply(a1, b1, B);
-    string p0 = multiply(a0, b0, B);
-    string p1 = subtract(multiply(add(a1,a0,B),add(b1,b0,B),B), add(p2, p0, B), B);
-    string product = add(add(p2+string((m-k)*2,'0'),p1 + string(m-k,'0'), B), p0, B);
-    while (product[0] == '0' && product.size() > 1) product.erase(0, 1);
-    return product;
+//Left-Right Rotation
+Node* AVLTree::LR_Rotation(Node* root) {
+	root->left = RR_Rotation(root->left);
+	return LL_Rotation(root);
 }
 
-// tool: add 0 to the behind of the string
-string addZeroBottom(string I1, int num)
-{
-    if (I1 == "0")
-    {
-        return I1;
-    }
-    for (long int i = 0; i < num; i++)
-    {
-        I1 += "0";
-    }
-    return I1;
+//calculate the height of root
+int AVLTree::getheight(Node* root) {
+	if (root == nullptr) return 0;
+	return max(getheight(root->left), getheight(root->right)) + 1;
 }
 
-// tool: compare the length of two numbers
-int compareLength(string I1, string I2)
-{
-    long int len1 = I1.length();
-    long int len2 = I2.length();
-    if (len1 > len2)
-    {
-        return 1;
-    }
-    else if (len1 < len2)
-    {
-        return -1;
-    }
-    for (long int i = 0; i < len1; i++)
-    {
-        if (I1.at(i) > I2.at(i))
-        {
-            return 1;
-        }
-        if (I1.at(i) < I2.at(i))
-        {
-            return -1;
-        }
-    }
-    return 0;
+//calculate height difference between left and right child
+int AVLTree::diff(Node* root) {
+	if (root == nullptr) return 0;
+	return getheight(root->left) - getheight(root->right);
 }
 
-// integer division 
-string divide(string I1, string I2, int B) {
-    int len1 = I1.size();
-    int len2 = I2.size();
-    std::string div;
-
-    if (len2 > len1 || I1 == "0") return "0";
-    if ((len1 == len2) || (len1 == len2+1)) {
-        int count = 0;
-        string diff = I1;
-        for (int i = 0; ; i++) {
-            diff = subtract(diff, I2, B);
-            if (diff[0] != '-') count = i + 1;
-            else break;
-        }
-        //transform count to B-based
-        int s;
-        do {
-            s = count % B;
-            count = count / B;
-            div = std::to_string(s) + div;
-        } while (count != 0);
-        return div;
-    }
-    string num1 = I1;
-    string s;
-    for (int i = len1 - len2; i >= 0; i--) {
-        string num2 = addZeroBottom(I2, i);
-        s = divide(num1, num2, B);
-        div += s;
-        num1 = subtract(num1, multiply(num2, s, B), B);
-    }
-    while (div[0] == '0' && div.size() > 1) div.erase(0, 1);
-    return div;
+//balance the tree
+Node* AVLTree::balance(Node* root) {
+	if (diff(root) > 1) {
+		if (diff(root->left) >= 0)
+			root = LL_Rotation(root);
+		else
+			root = LR_Rotation(root);
+	}
+	else if (diff(root) < -1) {
+		if (diff(root->right) <= 0)
+			root = RR_Rotation(root);
+		else
+			root = RL_Rotation(root);
+	}
+	return root;
 }
 
-// add, multiply and divide the input number of user
+//insert a key in AVL tree
+Node* AVLTree::insertNode(Node* root,int k) {
+	if (root == nullptr) {
+		root = new Node(k);
+		return root;
+	}
+	if (k < root->key) {
+		root->left = insertNode(root->left, k);
+		root = balance(root);
+		return root;
+	}
+	else if (k > root->key) {
+		root->right = insertNode(root->right, k);
+		root = balance(root);
+		return root;
+	}
+	else {
+		return root;
+	}
+}
+
+//find maximum of the tree
+Node* AVLTree::findMax(Node* root) {
+	if (root == nullptr || root->right == nullptr) {
+		return root;
+	}
+	else {
+		return findMax(root->right);
+	}
+}
+
+//delete a key from AVL tree
+Node* AVLTree::deleteNode(Node* root, int k) {
+	if (root == nullptr) {
+		return root;
+	}
+	if (k < root->key) {
+		root->left = deleteNode(root->left, k);
+		root = balance(root);
+		return root;
+	}
+	else if (k > root->key) {
+		root->right = deleteNode(root->right, k);
+		root = balance(root);
+		return root;
+	}
+	else {
+		// case 1: the node has no children or only one child
+		if (root->left == nullptr || root->right == nullptr) {
+			Node* temp = root->left ? root->left : root->right;
+			// if the node has no children
+			if (temp == nullptr) {
+				temp = root;
+				root = nullptr;
+			}
+			// if the node has one child
+			else {
+				*root = *temp;
+			}
+			delete temp;
+		}
+		// case 2: the node has two children
+		else {
+			Node* temp = findMax(root->left);
+			root->key = temp->key;
+			root->left = deleteNode(root->left, temp->key);
+		}
+		root = balance(root);
+		return root;
+	}
+}
+
+// preorder traversal "AVL tree"
+void AVLTree::preOrder(Node* root) {
+	if (root == nullptr) return;
+	cout << root->key << ' ';
+	preOrder(root->left);
+	preOrder(root->right);
+}
+
+// inorder traversal "AVL tree"
+void AVLTree::inOrder(Node* root) {
+	if (root == nullptr) return;
+	inOrder(root->left);
+	cout << root->key << ' ';
+	inOrder(root->right);
+}
+
+// Postorder traversal "AVL tree"
+void AVLTree::postOrder(Node* root) {
+	if (root == nullptr) return;
+	postOrder(root->left);
+	postOrder(root->right);
+	cout << root->key << ' ';
+}
+
+//determine whether the tree is empty
+bool isEmptyTree(Node* root) {
+	if (root == nullptr) {
+		return true;
+	}
+	else return false;
+}
+
+//process the input string of user, set AVL tree and print the traversal of tree finally
 int main() {
-    string I1, I2;
-    int B;
-    cin >> I1 >> I2 >> B;
-    cout << add(I1, I2, B) << ' ' << multiply(I1, I2, B) << ' ' << divide(I1, I2, B) << endl;
-    return 0;
+	string str;
+	getline(cin, str);  
+	stringstream ss(str);  
+	AVLTree tree;
+	string word;
+	while (ss >> word) {
+		if (word[0] == 'A') {
+			int i = stoi(word.substr(1));
+			tree.avlroot = tree.insertNode(tree.avlroot, i); 
+		}
+		else if (word[0] == 'D') {
+			int i = stoi(word.substr(1));
+			tree.avlroot = tree.deleteNode(tree.avlroot, i);
+		}
+		else {
+			if (isEmptyTree(tree.avlroot)) {
+				cout << "EMPTY";
+			}
+			else {
+				if (word == "IN") {
+					tree.inOrder(tree.avlroot);
+				}
+				else if (word == "PRE") {
+					tree.preOrder(tree.avlroot);
+				}
+				else if (word == "POST") {
+					tree.postOrder(tree.avlroot);
+				}
+				else {
+					cout << "Error of Output Type";
+				}
+			}
+		}
+	}
+	return 0;
 }
